@@ -1,0 +1,116 @@
+/* Filter Buttons Custom Styles */
+
+.filter-button {
+  @apply inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ease-in-out border focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
+
+.filter-button-default {
+  @apply bg-white text-gray-700 border-gray-300 hover:bg-gray-50 focus:ring-gray-500;
+}
+
+.filter-button-default.dark {
+  @apply bg-gray-800 text-gray-300 border-gray-600 hover:bg-gray-700;
+}
+
+.filter-button-active-default {
+  @apply bg-gray-900 text-white border-gray-900 hover:bg-gray-800 focus:ring-gray-500;
+}
+
+.filter-button-active-default.dark {
+  @apply bg-white text-gray-900 border-white hover:bg-gray-100;
+}
+
+.filter-button-primary {
+  @apply bg-blue-600 text-white border-blue-600 hover:bg-blue-700 focus:ring-blue-500;
+}
+
+.filter-button-success {
+  @apply bg-green-600 text-white border-green-600 hover:bg-green-700 focus:ring-green-500;
+}
+
+.filter-button-warning {
+  @apply bg-yellow-600 text-white border-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500;
+}
+
+.filter-button-danger {
+  @apply bg-red-600 text-white border-red-600 hover:bg-red-700 focus:ring-red-500;
+}
+
+.filter-count {
+  @apply ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-semibold leading-none rounded-full;
+}
+
+.filter-count-default {
+  @apply bg-gray-100 text-gray-600;
+}
+
+.filter-count-default.dark {
+  @apply bg-gray-700 text-gray-300;
+}
+
+.filter-count-active-default {
+  @apply bg-gray-700 text-white;
+}
+
+.filter-count-active-default.dark {
+  @apply bg-gray-200 text-gray-900;
+}
+
+.filter-count-primary {
+  @apply bg-blue-500 text-white;
+}
+
+.filter-count-success {
+  @apply bg-green-500 text-white;
+}
+
+.filter-count-warning {
+  @apply bg-yellow-500 text-white;
+}
+
+.filter-count-danger {
+  @apply bg-red-500 text-white;
+}
+
+/* Responsive filter grid */
+.filter-grid {
+  @apply grid grid-cols-1 gap-2;
+}
+
+@media (min-width: 640px) {
+  .filter-grid {
+    @apply grid-cols-2;
+  }
+}
+
+@media (min-width: 768px) {
+  .filter-grid {
+    @apply grid-cols-3;
+  }
+}
+
+@media (min-width: 1024px) {
+  .filter-grid {
+    @apply grid-cols-4;
+  }
+}
+
+/* Animation for filter changes */
+.filter-transition {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+.filter-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
