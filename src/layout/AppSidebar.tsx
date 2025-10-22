@@ -14,9 +14,10 @@ import {
   PlugInIcon,
   TableIcon,
   UserCircleIcon,
-  TaskIcon
+  TaskIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
+import UserSection from "../components/auth/UserSection";
 import SidebarWidget from "./SidebarWidget";
 
 type NavItem = {
@@ -42,7 +43,7 @@ const navItems: NavItem[] = [
     name: "User Profile",
     path: "/profile",
   },
-    {
+  {
     icon: <TaskIcon />,
     name: "Task List",
     path: "/task-list",
@@ -374,8 +375,10 @@ const AppSidebar: React.FC = () => {
             </div>
           </div>
         </nav>
-        {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null}
+        {/* {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null} */}
       </div>
+      {/* keep user section outside the scrollable area so it sticks to the bottom */}
+      {<UserSection />}
     </aside>
   );
 };
