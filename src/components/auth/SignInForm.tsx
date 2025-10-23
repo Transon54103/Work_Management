@@ -1,4 +1,4 @@
-import { JSX, useState } from "react";
+import React, { useState } from "react";
 import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
@@ -7,7 +7,8 @@ import Button from "../ui/button/Button";
 import { useAuthSafe } from "../../context/AuthContext";
 
 import { Link, useNavigate, useLocation } from "react-router-dom";
-export default function SignInForm(): JSX.Element {
+import { useLoading } from "../../context/LoadingContext";
+export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [password, setPassword] = useState("");
@@ -17,6 +18,7 @@ export default function SignInForm(): JSX.Element {
   const [isLoading, setIsLoading] = useState(false);
   const auth = useAuthSafe();
   const login = auth?.login;
+  const loading = useLoading();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -26,6 +28,7 @@ export default function SignInForm(): JSX.Element {
     e.preventDefault();
     setError("");
     setIsLoading(true);
+    loading?.show();
 
     if (!login) {
       setError("Authentication service not available");
@@ -40,48 +43,10 @@ export default function SignInForm(): JSX.Element {
       setError(err.message || "Invalid email or password");
     } finally {
       setIsLoading(false);
+      loading?.hide();
     }
   };
 
-  type Props = {
-    size?: number;
-    className?: string;
-    stroke?: string;
-  };
-
-  function Spinner({
-    size = 20,
-    className = "",
-    stroke = "currentColor",
-  }: Props) {
-    return (
-      <svg
-        role="status"
-        aria-label="loading"
-        className={`animate-spin ${className}`}
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <circle
-          cx="12"
-          cy="12"
-          r="10"
-          stroke={stroke}
-          strokeOpacity="0.25"
-          strokeWidth="4"
-        />
-        <path
-          d="M22 12a10 10 0 00-10-10"
-          stroke={stroke}
-          strokeWidth="4"
-          strokeLinecap="round"
-        />
-      </svg>
-    );
-  }
   return (
     <div className="flex flex-col flex-1">
       <div className="w-full max-w-md pt-10 mx-auto">
@@ -233,11 +198,7 @@ export default function SignInForm(): JSX.Element {
                 </div>
               </div>
             </form>
-            {isLoading && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                <Spinner size={48} className="text-white" />
-              </div>
-            )}
+            {/* Global loading overlay handled by LoadingOverlay in App (via LoadingProvider) */}
 
             <div className="mt-5">
               <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">

@@ -6,6 +6,7 @@ import TaskSection from "../components/tasks/TaskSection";
 import AddTaskModal from "../components/tasks/AddTaskModal";
 import { useTaskFilter, Task } from "../hooks/useFilter";
 import { TaskItemProps } from "../components/tasks/TaskItem";
+import { useLoading } from "../context/LoadingContext";
 
 type TaskStatus = Task["status"];
 type TaskListTask = Task & { previousStatus?: TaskStatus };
@@ -85,11 +86,13 @@ const initialTasks: TaskListTask[] = [
 ];
 
 const TaskList: React.FC = () => {
+  const loading = useLoading();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [tasks, setTasks] = useState<TaskListTask[]>(initialTasks);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
 
-  const { activeFilter, filteredItems, filters, handleFilterChange } = useTaskFilter(tasks);
+  const { activeFilter, filteredItems, filters, handleFilterChange } =
+    useTaskFilter(tasks);
 
   const convertToTaskItem = useCallback(
     (task: TaskListTask): TaskItemProps => ({
@@ -104,28 +107,38 @@ const TaskList: React.FC = () => {
     []
   );
 
-  const handleToggleComplete = (taskId: string) => {
-    setTasks((currentTasks) =>
-      currentTasks.map((task) => {
-        if (task.id !== taskId) {
-          return task;
-        }
+  const handleToggleComplete = async (taskId: string) => {
+    loading?.show();
+    try {
+      // Simulate API call delay - reduced for better UX
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
-        if (task.status === "completed") {
+      setTasks((currentTasks) =>
+        currentTasks.map((task) => {
+          if (task.id !== taskId) {
+            return task;
+          }
+
+          if (task.status === "completed") {
+            return {
+              ...task,
+              status: task.previousStatus ?? "todo",
+              previousStatus: undefined,
+            };
+          }
+
           return {
             ...task,
-            status: task.previousStatus ?? "todo",
-            previousStatus: undefined,
+            previousStatus: task.status,
+            status: "completed",
           };
-        }
-
-        return {
-          ...task,
-          previousStatus: task.status,
-          status: "completed",
-        };
-      })
-    );
+        })
+      );
+    } catch (error) {
+      console.error("Failed to update task:", error);
+    } finally {
+      loading?.hide();
+    }
   };
 
   const handleTaskClick = (taskId: string) => {
@@ -133,34 +146,45 @@ const TaskList: React.FC = () => {
     // Implement task detail view or edit
   };
 
-  const handleTaskDrop = (taskId: string, targetStatus: TaskStatus) => {
-    setTasks((currentTasks) =>
-      currentTasks.map((task) => {
-        if (task.id !== taskId) {
-          return task;
-        }
+  const handleTaskDrop = async (taskId: string, targetStatus: TaskStatus) => {
+    loading?.show();
+    try {
+      // Simulate API call delay - reduced for better UX
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
-        if (targetStatus === "completed") {
-          const originStatus =
-            task.status === "completed"
-              ? task.previousStatus ?? "todo"
-              : task.status;
+      setTasks((currentTasks) =>
+        currentTasks.map((task) => {
+          if (task.id !== taskId) {
+            return task;
+          }
+
+          if (targetStatus === "completed") {
+            const originStatus =
+              task.status === "completed"
+                ? task.previousStatus ?? "todo"
+                : task.status;
+
+            return {
+              ...task,
+              status: "completed",
+              previousStatus: originStatus,
+            };
+          }
 
           return {
             ...task,
-            status: "completed",
-            previousStatus: originStatus,
+            status: targetStatus,
+            previousStatus: undefined,
           };
-        }
-
-        return {
-          ...task,
-          status: targetStatus,
-          previousStatus: undefined,
-        };
-      })
-    );
-    setDraggedTaskId(null);
+        })
+      );
+      setDraggedTaskId(null);
+    } catch (error) {
+      console.error("Failed to update task:", error);
+      setDraggedTaskId(null);
+    } finally {
+      loading?.hide();
+    }
   };
 
   const handleTaskDragStart = (taskId: string) => {
@@ -186,7 +210,8 @@ const TaskList: React.FC = () => {
     [filteredItems, convertToTaskItem]
   );
 
-  const getFilterCount = (id: string) => filters.find((filter) => filter.id === id)?.count ?? 0;
+  const getFilterCount = (id: string) =>
+    filters.find((filter) => filter.id === id)?.count ?? 0;
 
   return (
     <div>
@@ -194,7 +219,7 @@ const TaskList: React.FC = () => {
         title="Task List | TailAdmin - React.js Admin Dashboard Template"
         description="Task management interface with filter and list view"
       />
-        <PageBreadcrumb pageTitle="Task List" />
+      <PageBreadcrumb pageTitle="Task List" />
       {/* Header */}
       <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         {/* Filter Header */}
@@ -205,7 +230,7 @@ const TaskList: React.FC = () => {
               activeFilter={activeFilter}
               onFilterChange={handleFilterChange}
             />
-            
+
             <div className="flex items-center gap-3">
               <button className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
                 <svg
@@ -223,7 +248,7 @@ const TaskList: React.FC = () => {
                 </svg>
                 Filter & Short
               </button>
-              
+
               <button
                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-transparent px-4 py-3 text-sm font-medium bg-brand-500 text-white shadow-theme-xs transition hover:bg-brand-600 disabled:bg-brand-300"
                 onClick={() => setIsCreateModalOpen(true)}
@@ -306,12 +331,20 @@ const TaskList: React.FC = () => {
             <div className="text-center py-12">
               <div className="mx-auto h-12 w-12 text-gray-400">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 48 48">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 20h16M20 28h8m-8-8V8a4 4 0 118 0v4m-4 8v8m-4-4h8m-8 0a4 4 0 01-4-4V20a4 4 0 014-4h8a4 4 0 014 4v8a4 4 0 01-4 4h-8z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M20 20h16M20 28h8m-8-8V8a4 4 0 118 0v4m-4 8v8m-4-4h8m-8 0a4 4 0 01-4-4V20a4 4 0 014-4h8a4 4 0 014 4v8a4 4 0 01-4 4h-8z"
+                  />
                 </svg>
               </div>
-              <h3 className="mt-4 text-sm font-medium text-gray-900 dark:text-white">No tasks found</h3>
+              <h3 className="mt-4 text-sm font-medium text-gray-900 dark:text-white">
+                No tasks found
+              </h3>
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                No tasks match the current filter. Try adjusting your filter or create a new task.
+                No tasks match the current filter. Try adjusting your filter or
+                create a new task.
               </p>
             </div>
           )}
@@ -321,8 +354,28 @@ const TaskList: React.FC = () => {
       <AddTaskModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSubmit={(data) => {
-          console.log("Create task", data);
+        onSubmit={async (data) => {
+          loading?.show();
+          try {
+            // Simulate API call delay - reduced for better UX
+            await new Promise((resolve) => setTimeout(resolve, 400));
+
+            // Add new task to the list
+            const newTask: TaskListTask = {
+              id: Date.now().toString(),
+              title: data.title || "New Task",
+              status: "todo",
+              priority: "medium",
+            };
+
+            setTasks((currentTasks) => [...currentTasks, newTask]);
+            setIsCreateModalOpen(false);
+            console.log("Created task:", data);
+          } catch (error) {
+            console.error("Failed to create task:", error);
+          } finally {
+            loading?.hide();
+          }
         }}
       />
     </div>

@@ -5,6 +5,7 @@ import Input from "../form/input/InputField";
 import Checkbox from "../form/input/Checkbox";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthSafe } from "../../context/AuthContext";
+import { useLoading } from "../../context/LoadingContext";
 
 export default function SignUpForm(): JSX.Element {
   const [showPassword, setShowPassword] = useState(false);
@@ -21,6 +22,7 @@ export default function SignUpForm(): JSX.Element {
   const auth = useAuthSafe();
   const register = auth?.register;
   const navigate = useNavigate();
+  const loading = useLoading();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
@@ -49,6 +51,7 @@ export default function SignUpForm(): JSX.Element {
     }
 
     setIsLoading(true);
+    loading?.show();
     try {
       // support both register(name,email,password) and register({name,email,password})
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -65,6 +68,7 @@ export default function SignUpForm(): JSX.Element {
       setError(err?.message || "Registration failed. Please try again.");
     } finally {
       setIsLoading(false);
+      loading?.hide();
     }
   };
 
