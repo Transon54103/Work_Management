@@ -27,19 +27,32 @@ export default function SignInForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setIsLoading(true);
-    loading?.show();
 
-    if (!login) {
-      setError("Authentication service not available");
-      setIsLoading(false);
+    // Client-side validation
+    if (!email.trim()) {
+      setError("Email is required");
       return;
     }
 
+    if (!password) {
+      setError("Password is required");
+      return;
+    }
+
+    if (!login) {
+      setError("Authentication service not available");
+      return;
+    }
+
+    setIsLoading(true);
+    loading?.show();
+
     try {
-      await login(email, password);
+      await login(email.trim(), password);
+      // Login successful, navigate to dashboard
       navigate(from, { replace: true });
     } catch (err: any) {
+      // Login failed, show user-friendly error message
       setError(err.message || "Invalid email or password");
     } finally {
       setIsLoading(false);
@@ -180,10 +193,8 @@ export default function SignInForm() {
                   </Link>
                 </div>
                 {error && (
-                  <div className="rounded-md bg-red-50 p-4 dark:bg-red-900/50">
-                    <div className="text-sm text-red-700 dark:text-red-400">
-                      {error}
-                    </div>
+                  <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
+                    {error}
                   </div>
                 )}
                 <div>

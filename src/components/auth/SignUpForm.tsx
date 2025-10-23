@@ -3,7 +3,7 @@ import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Checkbox from "../form/input/Checkbox";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuthSafe } from "../../context/AuthContext";
 import { useLoading } from "../../context/LoadingContext";
 
@@ -17,11 +17,12 @@ export default function SignUpForm(): JSX.Element {
     confirmPassword: "",
   });
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const auth = useAuthSafe();
   const register = auth?.register;
-  const navigate = useNavigate();
+
   const loading = useLoading();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,6 +36,22 @@ export default function SignUpForm(): JSX.Element {
     e.preventDefault();
     setError("");
 
+    // Client-side validation
+    if (!formData.name.trim()) {
+      setError("Full name is required");
+      return;
+    }
+
+    if (!formData.email.trim()) {
+      setError("Email is required");
+      return;
+    }
+
+    if (!formData.password) {
+      setError("Password is required");
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -42,6 +59,11 @@ export default function SignUpForm(): JSX.Element {
 
     if (formData.password.length < 6) {
       setError("Password must be at least 6 characters");
+      return;
+    }
+
+    if (!isChecked) {
+      setError("You must agree to the Terms and Conditions");
       return;
     }
 
@@ -53,19 +75,36 @@ export default function SignUpForm(): JSX.Element {
     setIsLoading(true);
     loading?.show();
     try {
-      // support both register(name,email,password) and register({name,email,password})
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      const resp = await register(
-        formData.name,
-        formData.email,
+      await register(
+        formData.name.trim(),
+        formData.email.trim(),
         formData.password
       );
-      // if register returns nothing, assume success
-      navigate("/", { replace: true });
-      return resp;
+
+      // Registration successful
+      setSuccess("Account created successfully! Please sign in to continue.");
+
+      // Clear form
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      });
     } catch (err: any) {
-      setError(err?.message || "Registration failed. Please try again.");
+      // Handle different types of errors
+      if (err?.message) {
+        setError(err.message);
+      } else if (err?.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err?.response?.data?.errors) {
+        // Handle validation errors from API
+        const errors = err.response.data.errors;
+        const errorMessages = Object.values(errors).flat();
+        setError(errorMessages.join(", "));
+      } else {
+        setError("Registration failed. Please try again.");
+      }
     } finally {
       setIsLoading(false);
       loading?.hide();
@@ -248,7 +287,23 @@ export default function SignUpForm(): JSX.Element {
                   </p>
                 </div>
 
-                {error && <div className="text-sm text-red-600">{error}</div>}
+                {error && (
+                  <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
+                    {error}
+                  </div>
+                )}
+
+                {success && (
+                  <div className="p-3 text-sm text-green-600 bg-green-50 border border-green-200 rounded-lg dark:bg-green-900/20 dark:border-green-800 dark:text-green-400">
+                    <div className="mb-2">{success}</div>
+                    <Link
+                      to="/signin"
+                      className="font-medium text-green-700 underline dark:text-green-300 hover:text-green-800 dark:hover:text-green-200"
+                    >
+                      Go to Sign In
+                    </Link>
+                  </div>
+                )}
 
                 <div>
                   <button
