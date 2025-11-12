@@ -1,4 +1,10 @@
-import { createContext, useCallback, useContext, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useState,
+  useMemo,
+} from "react";
 import Spinner from "../components/ui/Spinner";
 
 type LoadingContextType = {
@@ -15,10 +21,13 @@ export const LoadingProvider = ({ children }: { children: any }) => {
   const show = useCallback(() => setCount((c) => c + 1), []);
   const hide = useCallback(() => setCount((c) => Math.max(0, c - 1)), []);
 
+  const value = useMemo(
+    () => ({ show, hide, isLoading: count > 0 }),
+    [show, hide, count]
+  );
+
   return (
-    <LoadingContext.Provider value={{ show, hide, isLoading: count > 0 }}>
-      {children}
-    </LoadingContext.Provider>
+    <LoadingContext.Provider value={value}>{children}</LoadingContext.Provider>
   );
 };
 

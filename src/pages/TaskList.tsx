@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import FilterButtons from "../components/common/FilterButtons";
@@ -7,6 +7,7 @@ import AddTaskModal from "../components/tasks/AddTaskModal";
 import { useTaskFilter, Task } from "../hooks/useFilter";
 import { TaskItemProps } from "../components/tasks/TaskItem";
 import { useLoading } from "../context/LoadingContext";
+import taskService from "../services/taskService";
 
 type TaskStatus = Task["status"];
 type TaskListTask = Task & { previousStatus?: TaskStatus };
@@ -18,16 +19,6 @@ const categoryMap: Record<string, string> = {
   "Product Update - Q4 2024": "Template",
   "Kanban Flow Manager": "Marketing",
   "Make internal feedback": "Template",
-};
-
-const dueDateMap: Record<string, string> = {
-  "1": "Tomorrow",
-  "2": "Feb 12, 2024",
-  "3": "Jan 8, 2027",
-  "4": "Jan 8, 2027",
-  "5": "Tomorrow",
-  "6": "Jan 8, 2027",
-  "7": "Jan 8, 2027",
 };
 
 const assigneeMap: Record<string, { name: string; avatar: string }> = {
@@ -91,16 +82,61 @@ const TaskList: React.FC = () => {
   const [tasks, setTasks] = useState<TaskListTask[]>(initialTasks);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
 
+  // Fetch tasks from API on mount
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      loading?.show();
+      try {
+        const resp = await taskService.getTasks();
+        console.log("Fetched tasks:", resp);
+        const data = resp?.data ?? [];
+        console.log("Task data:", data);
+        if (!mounted) return;
+
+        // normalize tasks for UI
+        const mapped: TaskListTask[] = data.map((t: any) => ({
+          id: String(t.id ?? t.Id ?? Date.now()),
+          title: t.title ?? t.Title ?? "Untitled",
+          description: t.description ?? t.Description ?? undefined,
+          dueDate: t.dueDate ?? t.DueDate ?? undefined,
+          status: (t.status ?? t.Status ?? "todo") as string,
+          assignedUserId: t.assignedUserId ?? t.AssignedUserId ?? undefined,
+          createdByUserId: t.createdByUserId ?? t.CreatedByUserId ?? undefined,
+          projectId: t.projectId ?? t.ProjectId ?? undefined,
+          createdAt: t.createdAt ?? t.CreatedAt ?? undefined,
+          updatedAt: t.updatedAt ?? t.UpdatedAt ?? undefined,
+          priority: (t.priority ?? t.Priority ?? "medium") as any,
+        }));
+
+        setTasks(mapped);
+      } catch (err) {
+        console.error("Failed to fetch tasks:", err);
+      } finally {
+        loading?.hide();
+      }
+    };
+
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const { activeFilter, filteredItems, filters, handleFilterChange } =
     useTaskFilter(tasks);
 
   const convertToTaskItem = useCallback(
     (task: TaskListTask): TaskItemProps => ({
-      id: task.id,
+      id: String(task.id),
       title: task.title,
-      status: task.status,
+      // normalize status to known values for the UI
+      status:
+        task.status === "progress" || task.status === "completed"
+          ? (task.status as "progress" | "completed")
+          : ("todo" as "todo"),
       category: categoryMap[task.title] || "General",
-      dueDate: dueDateMap[task.id],
+      dueDate: task.dueDate,
       assignee: assigneeMap[task.id],
       isCompleted: task.status === "completed",
     }),
@@ -110,29 +146,53 @@ const TaskList: React.FC = () => {
   const handleToggleComplete = async (taskId: string) => {
     loading?.show();
     try {
-      // Simulate API call delay - reduced for better UX
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      // find task and compute new status
+      const current = tasks.find((t) => String(t.id) === String(taskId));
+      if (!current) throw new Error("Task not found");
+
+      const newStatus =
+        current.status === "completed"
+          ? current.previousStatus ?? "todo"
+          : "completed";
+      // send update to server
+      const payload = {
+        ...current,
+        status: newStatus,
+      } as any;
+
+      const resp = await taskService.updateTask(payload);
+      const updated = resp?.data ?? payload;
+
+      // normalize server response similarly to load mapping
+      const mapped: TaskListTask = {
+        id: String(updated.id ?? updated.Id ?? current.id),
+        title: updated.title ?? updated.Title ?? current.title,
+        description:
+          updated.description ?? updated.Description ?? current.description,
+        dueDate: updated.dueDate ?? updated.DueDate ?? current.dueDate,
+        status: (updated.status ?? updated.Status ?? newStatus) as string,
+        assignedUserId:
+          updated.assignedUserId ??
+          updated.AssignedUserId ??
+          current.assignedUserId,
+        createdByUserId:
+          updated.createdByUserId ??
+          updated.CreatedByUserId ??
+          current.createdByUserId,
+        projectId: updated.projectId ?? updated.ProjectId ?? current.projectId,
+        createdAt: updated.createdAt ?? updated.CreatedAt ?? current.createdAt,
+        updatedAt: updated.updatedAt ?? updated.UpdatedAt ?? current.updatedAt,
+        priority: updated.priority ?? updated.Priority ?? current.priority,
+        previousStatus:
+          updated.status === "completed"
+            ? current.status === "completed"
+              ? current.previousStatus
+              : current.status
+            : undefined,
+      };
 
       setTasks((currentTasks) =>
-        currentTasks.map((task) => {
-          if (task.id !== taskId) {
-            return task;
-          }
-
-          if (task.status === "completed") {
-            return {
-              ...task,
-              status: task.previousStatus ?? "todo",
-              previousStatus: undefined,
-            };
-          }
-
-          return {
-            ...task,
-            previousStatus: task.status,
-            status: "completed",
-          };
-        })
+        currentTasks.map((t) => (String(t.id) === String(taskId) ? mapped : t))
       );
     } catch (error) {
       console.error("Failed to update task:", error);
@@ -150,7 +210,17 @@ const TaskList: React.FC = () => {
     loading?.show();
     try {
       // Simulate API call delay - reduced for better UX
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      const current = tasks.find((t) => String(t.id) === String(taskId));
+      if (!current) throw new Error("Task not found");
+
+      const newStatus = targetStatus;
+      // send update to server
+      const payload = {
+        ...current,
+        status: newStatus,
+      } as any;
+
+      const resp = await taskService.updateTask(payload);
 
       setTasks((currentTasks) =>
         currentTasks.map((task) => {

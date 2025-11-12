@@ -4,7 +4,7 @@ export interface TaskItemProps {
   id: string;
   title: string;
   status: "todo" | "progress" | "completed";
-  dueDate?: string;
+  dueDate?: Date;
   category?: string;
   assignee?: {
     name: string;
@@ -99,12 +99,18 @@ const TaskItem: React.FC<TaskItemProps> = ({
 
   const titleClasses = [
     "truncate text-sm font-medium",
-    isCompleted ? "text-gray-500 line-through dark:text-gray-400" : "text-gray-900 dark:text-white",
+    isCompleted
+      ? "text-gray-500 line-through dark:text-gray-400"
+      : "text-gray-900 dark:text-white",
   ].join(" ");
 
   const categoryClasses = [
     "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors duration-200",
-    category ? (isCompleted ? "bg-[#DDE4FF] text-brand-600 dark:bg-brand-500/20 dark:text-brand-200" : baseCategoryColor(category)) : "",
+    category
+      ? isCompleted
+        ? "bg-[#DDE4FF] text-brand-600 dark:bg-brand-500/20 dark:text-brand-200"
+        : baseCategoryColor(category)
+      : "",
   ].join(" ");
 
   const metaTextClasses = isCompleted
@@ -126,7 +132,12 @@ const TaskItem: React.FC<TaskItemProps> = ({
       role="listitem"
     >
       <div className="hidden text-gray-300 transition-colors duration-200 sm:block sm:flex-shrink-0 sm:group-hover:text-gray-400 dark:text-gray-600 dark:group-hover:text-gray-500">
-        <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <svg
+          className="h-5 w-5"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          aria-hidden="true"
+        >
           <path d="M7 5a1 1 0 11-2 0 1 1 0 012 0zm0 5a1 1 0 11-2 0 1 1 0 012 0zm-1 4a1 1 0 100 2 1 1 0 000-2zm7-9a1 1 0 112 0 1 1 0 01-2 0zm2 9a1 1 0 10-2 0 1 1 0 002 0zm-2-4a1 1 0 112 0 1 1 0 01-2 0z" />
         </svg>
       </div>
@@ -137,7 +148,11 @@ const TaskItem: React.FC<TaskItemProps> = ({
           onClick={handleCheckboxClick}
           className={checkboxClasses}
           aria-pressed={isCompleted}
-          aria-label={isCompleted ? "Mark task as not completed" : "Mark task as completed"}
+          aria-label={
+            isCompleted
+              ? "Mark task as not completed"
+              : "Mark task as completed"
+          }
         >
           <svg
             className="h-3.5 w-3.5"
@@ -146,7 +161,11 @@ const TaskItem: React.FC<TaskItemProps> = ({
             stroke="currentColor"
             strokeWidth={2}
           >
-            <path d="M5 10.5l3 3L15 6" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M5 10.5l3 3L15 6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </button>
       </div>
@@ -161,18 +180,38 @@ const TaskItem: React.FC<TaskItemProps> = ({
       {dueDate && (
         <div className="flex-shrink-0">
           <div className={`flex items-center gap-1 text-xs ${metaTextClasses}`}>
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
             </svg>
-            <span>{formatDate(dueDate)}</span>
+            <span>{formatDate(dueDate?.toISOString())}</span>
           </div>
         </div>
       )}
 
       <div className="flex-shrink-0">
         <div className={`flex items-center gap-1 text-xs ${metaTextClasses}`}>
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 3.582-8 8-8s8 3.582 8 8z" />
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 3.582-8 8-8s8 3.582 8 8z"
+            />
           </svg>
           <span>{commentCount}</span>
         </div>
@@ -187,7 +226,9 @@ const TaskItem: React.FC<TaskItemProps> = ({
               className="h-full w-full object-cover"
               onError={(event) => {
                 const target = event.target as HTMLImageElement;
-                target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(assignee.name)}&background=6366f1&color=fff`;
+                target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  assignee.name
+                )}&background=6366f1&color=fff`;
               }}
             />
           </div>

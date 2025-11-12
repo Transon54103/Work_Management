@@ -18,7 +18,7 @@ import {
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 import UserSection from "../components/auth/UserSection";
-import SidebarWidget from "./SidebarWidget";
+// import SidebarWidget from "./SidebarWidget";
 
 type NavItem = {
   name: string;

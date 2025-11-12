@@ -3,9 +3,18 @@ import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
+import { useAuthSafe } from "../../context/AuthContext";
 
 export default function UserInfoCard() {
   const { isOpen, openModal, closeModal } = useModal();
+  const auth = useAuthSafe();
+
+  // If auth context is not available or user is not logged in, don't render
+  if (!auth || !auth.user) {
+    return null;
+  }
+
+  const { user, logout } = auth;
   const handleSave = () => {
     // Handle save logic here
     console.log("Saving changes...");
@@ -25,7 +34,7 @@ export default function UserInfoCard() {
                 First Name
               </p>
               <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                Musharof
+                {user.name}
               </p>
             </div>
 
